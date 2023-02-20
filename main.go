@@ -2,13 +2,17 @@ package main
 
 import (
 	"flag"
+	"github.com/zhayt/read-adviser-bot/clients/telegram"
 	"log"
 )
 
-func main() {
-	t := mustToken()
+const (
+	tgBotHost = "api.telegram.org"
+)
 
-	// tgClient = telegram.New(token)   -> client use for connect telegram api, token for identified user
+func main() {
+	// client use for connect telegram api, token for identified user
+	tgClient := telegram.New(tgBotHost, mustToken())
 
 	// fetcher = fetcher.New()         -> fetcher for gets events
 
