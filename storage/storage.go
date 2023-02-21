@@ -20,6 +20,7 @@ type Page struct {
 	UserName string // client name
 }
 
+// Hash generate hash using Page.URL
 func (p Page) Hash() (string, error) {
 	h := sha1.New()
 
