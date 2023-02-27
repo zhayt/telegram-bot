@@ -1,31 +1,50 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"github.com/zhayt/read-adviser-bot/clients/telegram"
+	tgClient "github.com/zhayt/read-adviser-bot/clients/telegram"
+	"github.com/zhayt/read-adviser-bot/consumer/event-consumer"
+	"github.com/zhayt/read-adviser-bot/events/telegram"
+	"github.com/zhayt/read-adviser-bot/storage/sqlite"
 	"log"
 )
 
 const (
-	tgBotHost = "api.telegram.org"
+	tgBotHost         = "api.telegram.org"
+	sqliteStoragePath = "date/sqlite/storage.db"
+	batchSize         = 100
 )
 
 func main() {
-	// client use for connect telegram api, token for identified user
-	tgClient := telegram.New(tgBotHost, mustToken())
+	//s := files.New(storagePath)
+	s, err := sqlite.New(sqliteStoragePath)
+	if err != nil {
+		log.Fatalf("can't connect to storage: %s", err.Error())
+	}
 
-	// fetcher = fetcher.New()         -> fetcher for gets events
+	if err := s.Init(context.TODO()); err != nil {
+		log.Fatalf("can't init storage: %s", err.Error())
+	}
 
-	// processor = processor.New()        -> processor for handler events
+	eventsProcessor := telegram.New(
+		tgClient.New(tgBotHost, mustToken()),
+		s,
+	)
 
-	// consumer.Start(fetcher, processor)   -> consumer gets events and handlers its
+	log.Print("service started")
+
+	consumer := event_consumer.New(eventsProcessor, eventsProcessor, batchSize)
+	if err := consumer.Start(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // mustToken use for takes token value as an argument from terminal
 // if no-token is specified, the program terminates
 func mustToken() string {
 	token := flag.String(
-		"token-bot-token",
+		"tg-token",
 		"",
 		"token for access to telegram bot",
 	)
