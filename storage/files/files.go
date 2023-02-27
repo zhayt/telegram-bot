@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -17,16 +18,14 @@ type Storage struct {
 	basePath string // stored basePath where we locate all links
 }
 
-const defaultPerm = 0664
-
-var ErrNoSavedPages = errors.New("no saves page")
+const defaultPerm = 0775
 
 // New create Storage
 func New(basePath string) Storage {
 	return Storage{basePath: basePath}
 }
 
-func (s Storage) Save(page *storage.Page) (err error) {
+func (s Storage) Save(ctx context.Context, page *storage.Page) (err error) {
 	defer func() { err = e.WrapIfErr("can't save page", err) }()
 
 	// form the path where our file will be saved
@@ -61,7 +60,7 @@ func (s Storage) Save(page *storage.Page) (err error) {
 	return nil
 }
 
-func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
+func (s Storage) PickRandom(ctx context.Context, userName string) (page *storage.Page, err error) {
 	defer func() { err = e.WrapIfErr("can't pick random", err) }()
 
 	// form the path where our files saved
@@ -74,7 +73,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 	}
 
 	if len(files) == 0 {
-		return nil, ErrNoSavedPages
+		return nil, storage.ErrNoSavedPages
 	}
 
 	// get "random" number
@@ -87,7 +86,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 	return s.decodePage(filepath.Join(path, file.Name()))
 }
 
-func (s Storage) Remove(p *storage.Page) error {
+func (s Storage) Remove(ctx context.Context, p *storage.Page) error {
 	// form file name
 	fileName, err := fileName(p)
 	if err != nil {
@@ -107,7 +106,7 @@ func (s Storage) Remove(p *storage.Page) error {
 	return nil
 }
 
-func (s Storage) IsExists(p *storage.Page) (bool, error) {
+func (s Storage) IsExists(ctx context.Context, p *storage.Page) (bool, error) {
 	// form file name
 	fileName, err := fileName(p)
 	if err != nil {
